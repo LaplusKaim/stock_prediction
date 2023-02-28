@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from datetime import datetime, date
+import datetime as datetime
 import pandas_datareader
 import plotly.graph_objects as go
 
@@ -58,9 +58,8 @@ try:
     st.header(stock_name + " キャンドルスティック")
     st.plotly_chart(fig, use_container_width=True)
 
-    df_stock['label'] = df_stock['Close'].shift(-38)
+    df_stock['label'] = df_stock['Close'].shift(-30)
     st.header(stock_name + ' 1か月後を予測しよう（USD）')
-
     def stock_predict():
         X = np.array(df_stock.drop(['label', 'SMA'], axis=1))
         X = sklearn.preprocessing.scale(X)
@@ -84,19 +83,22 @@ try:
             st.write('信頼度：低')
         st.write('水色の線（predict）が予測値です。')
 
-        predict_data = model.predict(predict_data)
+        predicted_data = model.predict(predict_data)
         df_stock['Predict'] = np.nan
-        last_data = df_stock.iloc[-1].name
+        last_date = df_stock.iloc[-1].name
         one_day = 86400
-        next_unix =last_data.timestamp() + one_day
+        next_unix = last_date.timestamp() + one_day
 
-        for data in predict_data:
-            next_date = datetime.fromtimestamp(next_unix)
+        for data in predicted_data:
+            next_date = datetime.datetime.fromtimestamp(next_unix)
             next_unix += one_day
             df_stock.loc[next_date] = np.append([np.nan] * (len(df_stock.columns) -1), data)
 
         df_stock['Close'].plot(figsize=(15, 6), color="green")
         df_stock['Predict'].plot(figsize=(15, 6), color="orange")
+
+        df_stock3 = df_stock[['Close', 'Predict']]
+        st.line_chart(df_stock3)
 
     if st.button('予測する'):
         stock_predict()
